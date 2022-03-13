@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+#Config file
+config
+
+#Build files
+/build/CMakeFiles
+/build/CMakeCache.txt
+/build/cmake_install.cmake
+/build/prueba
