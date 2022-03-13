@@ -39,3 +39,4 @@ config
 /build/CMakeCache.txt
 /build/cmake_install.cmake
 /build/prueba
+/build/Makefile
