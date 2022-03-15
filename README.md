@@ -8,10 +8,6 @@ apt install libssl-dev libboost-all-dev
 
 ```
 cd build
-```
-```
 cmake ..
-```
-```
 ./buildnrun.sh
 ```
