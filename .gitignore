@@ -40,3 +40,4 @@ config
 /build/cmake_install.cmake
 /build/prueba
 /build/Makefile
+/scripts/*
