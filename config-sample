@@ -1,1 +1,3 @@
-TOKEN=
+TOKEN=*telegram bot token here*
+BOT_NAME=Leo Mattioli
+LANGUAGE=es_AR
