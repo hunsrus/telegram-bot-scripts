@@ -7,6 +7,10 @@
 #include <fstream>
 #include "libtelegram/libtelegram.h"
 
+int download(std::string url, std::string file_name);
+int convert2wav(std::string file_name);
+int transcribe(std::string file_name);
+
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
     std::string result;
@@ -68,7 +72,6 @@ int main(void)
 			sender.send_message(message.chat.id, response);
 		}
 
-
 		if(message.voice)
 		{
 			sender.send_chat_action(message_chat_id, telegram::sender::chat_action_type::TYPING); // show the user they should wait, we're typing
@@ -79,42 +82,44 @@ int main(void)
 			    return;
 			}
 			auto const &file(*file_optional);
-			//auto file_blob(file.download(token)); // ------------------------ stream.open() NOT WORKING
-			//momentarily using wget (no crossplatform)
 			std::string url = file.get_url(token).to_string();
-			std::string command = "wget "+url;
-			//std::string url = std::string("api.telegram.org/file/bot" + token + "/"+ *file.file_path);
-			//std::string const filename(std::string("voice_" + file.file_id + ".oga")); // give it a unique filename
-			//std::ofstream filestream(std::string("voice_" + file.file_id + ".oga"), std::ios::binary); // make sure we write in binary mode
-			
 			std::string file_name = (*file.file_path).substr((*file.file_path).find_last_of("/")+1);
-			
-			//filestream.write(file_blob.data(), file_blob.size());                     // write the binary blob to disk
-			if(system(command.c_str()))
+			std::string file_wav = file_name.substr(0,file_name.find_last_of(".")+1)+"wav";
+
+			if(!download(url, file_name))
 			{
-				sender.send_message(message_chat_id, "Error descargando el archivo de voz");
-			}else
-			{
-				std::string file_wav = file_name.substr(0,file_name.find_last_of(".")+1)+"wav";
-				command = "ffmpeg -i "+file_name+" "+file_wav;
-				system(command.c_str());
-				command = "/usr/local/bin/spchcat "+file_wav+" >> transcript";
-				system(command.c_str());
+				convert2wav(file_name);
+				transcribe(file_wav);
 				std::string transcript;
 				std::ifstream transcriptFile("transcript");
 				if(transcriptFile.is_open())
 				{
 					std::getline(transcriptFile,transcript);
-				}else transcript = "Error leyendo archivo de transcripción";
+					transcriptFile.close();
+				}else transcript = "Error reading transcript file";
 				sender.send_message(message_chat_id, transcript);
-				command = "rm "+file_name+" "+file_wav+" transcript";
-				system(command.c_str());
-			}
+				system(std::string("rm "+file_name+" "+file_wav+" transcript").c_str());
+			}else sender.send_message(message_chat_id, "Error downloading voice message");
 		}
-//		std::string const reply(message_from + " sent \"" + *message.text + "\" to chat id " + std::to_string(message.chat.id)); // each element is a native type - the chat id is an integer
-//	    	sender.send_message(message.chat.id, reply);                                // send our reply from within the callback
   	});
 	listener.set_num_threads(1);
 	listener.run();                                                               // launch the listener - this call blocks until the listener is terminated
 	return EXIT_SUCCESS;
+}
+
+int download(std::string url, std::string file_name)	//Download file in executable current directory
+{
+	std::string command = "wget "+url;
+	return system(command.c_str());
+}
+
+int convert2wav(std::string file_name)
+{
+	std::string file_wav = file_name.substr(0,file_name.find_last_of(".")+1)+"wav";
+	return system(std::string("ffmpeg -i "+file_name+" "+file_wav).c_str());
+}
+
+int transcribe(std::string file_name)
+{
+	return system(std::string("/usr/local/bin/spchcat "+file_name+" >> transcript").c_str());
 }
