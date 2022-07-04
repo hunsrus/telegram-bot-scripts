@@ -7,6 +7,7 @@
 #include <fstream>
 #include "libtelegram/libtelegram.h"
 
+std::string checknrun(std::string command);
 int download(std::string url, std::string file_name);
 int convert2wav(std::string file_name);
 int transcribe(std::string file_name);
@@ -26,7 +27,7 @@ std::string exec(const char* cmd) {
 
 int main(void)
 {
-	std::string response;
+	std::string response, command;
 	std::string line, param_name, param_content, token, bot_name, lang;
 	std::ifstream configFile("../config");
 	if(configFile.is_open())
@@ -45,34 +46,12 @@ int main(void)
 	}else std::cout << "Error reading configuration file" << std::endl;
   	telegram::sender sender(token);                                               // create a sender with our token for outgoing messages
   	telegram::listener::poll listener(sender);                                    // create a polling listener which will process incoming requests, polling using the sender
-  	listener.set_callback_message([&](telegram::types::message const &message)
-	{									   // we set a callback for receiving messages in native format, using a lambda for convenience
+  	listener.set_callback_message([&](telegram::types::message const &message)	  // we set a callback for receiving messages in native format, using a lambda for convenience
+	{
 		auto message_chat_id = message.chat.id;
-    		std::string const message_from(message.from ? message.from->first_name : "Unknown sender"); // some fields, such as message.from, are optional
-	    	if(message.text == "Battery")
-		{
-			response = exec("scripts/battery-status/battery-status.sh");
-			sender.send_message(message.chat.id, response); 
-		}
-		else if (message.text == "Start")
-		{
-			response = exec("scripts/serial-commander/sc start");
-			sender.send_message(message.chat.id, response);
-		}
-		else if (message.text == "Prender led")
-		{
-			response = exec("scripts/serial-commander/sc builtin_on");
-			if(!response.compare("Successful connection to /dev/ttyUSB0")) response  = "Ya te lo prendo maestro";	//Si la operación sale bien, cambia la respuesta por otro mensaje. Si sale mal, muestra el error correspondiente que ya se encuentra en el string response.
-			sender.send_message(message.chat.id, response);
-		}
-		else if (message.text == "Apagar led")
-		{
-			response = exec("scripts/serial-commander/sc builtin_off");
-			if(!response.compare("Successful connection to /dev/ttyUSB0")) response  = "Ya te lo apago maestro";
-			sender.send_message(message.chat.id, response);
-		}
-
-		if(message.voice)
+    	std::string const message_from(message.from ? message.from->first_name : "Unknown sender"); // some fields, such as message.from, are optional
+	    if(message.text) command = *message.text;
+		else if(message.voice)
 		{
 			sender.send_chat_action(message_chat_id, telegram::sender::chat_action_type::TYPING); // show the user they should wait, we're typing
 			auto const &file_optional(sender.get_file((*message.voice).file_id));
@@ -90,17 +69,19 @@ int main(void)
 			{
 				convert2wav(file_name);
 				transcribe(file_wav);
-				std::string transcript;
 				std::ifstream transcriptFile("transcript");
 				if(transcriptFile.is_open())
 				{
-					std::getline(transcriptFile,transcript);
+					std::getline(transcriptFile,command);
 					transcriptFile.close();
-				}else transcript = "Error reading transcript file";
-				sender.send_message(message_chat_id, transcript);
+					if(!command.empty()) command.resize(command.length()-1);		//removes last unwanted space character
+				}else sender.send_message(message_chat_id, "Error reading transcript file");
+				//sender.send_message(message_chat_id, transcript);
 				system(std::string("rm "+file_name+" "+file_wav+" transcript").c_str());
 			}else sender.send_message(message_chat_id, "Error downloading voice message");
 		}
+		response = checknrun(command);
+		sender.send_message(message.chat.id, response);
   	});
 	listener.set_num_threads(1);
 	listener.run();                                                               // launch the listener - this call blocks until the listener is terminated
@@ -109,17 +90,45 @@ int main(void)
 
 int download(std::string url, std::string file_name)	//Download file in executable current directory
 {
-	std::string command = "wget "+url;
-	return system(command.c_str());
+	std::cout << "Downloading file \"" << file_name << "\" from " << url << std::endl;
+	return system(std::string("wget "+url).c_str());
 }
 
 int convert2wav(std::string file_name)
 {
 	std::string file_wav = file_name.substr(0,file_name.find_last_of(".")+1)+"wav";
-	return system(std::string("ffmpeg -i "+file_name+" "+file_wav).c_str());
+	std::cout << "Converting file \"" << file_name << "\" to \"" << file_wav << "\"" << std::endl;
+	return system(std::string("ffmpeg -y -i "+file_name+" "+file_wav).c_str());		//-y overwrite always (in case something went wrong deleting the files)
 }
 
 int transcribe(std::string file_name)
 {
+	std::cout << "Transcribing file \"" << file_name << "\" into transcript file" << std::endl;
 	return system(std::string("/usr/local/bin/spchcat "+file_name+" >> transcript").c_str());
+}
+
+std::string checknrun(std::string command)
+{
+	std::string response;
+	if(command.empty()) response = "Error de transcripción. Intentá nuevamente con un audio más largo.";
+	else if(command == "Battery")
+	{
+		response = exec("../scripts/battery-status/battery-status.sh");
+	}
+	else if (command == "Start")
+	{
+		response = exec("../scripts/serial-commander/sc start");
+		
+	}
+	else if (command == "prender la luz de la cocina")
+	{
+		response = exec("../scripts/serial-commander/sc led_on");
+		if(!response.compare("Successful connection to /dev/ttyUSB0\n")) response  = "Ya te la prendí maestro";	//Si la operación sale bien, cambia la respuesta por otro mensaje. Si sale mal, muestra el error correspondiente que ya se encuentra en el string response.
+	}
+	else if (command == "apagar la luz de la cocina")
+	{
+		response = exec("../scripts/serial-commander/sc led_off");
+		if(!response.compare("Successful connection to /dev/ttyUSB0\n")) response  = "Ya te la apagué maestro";
+	}else response = "No entiendo que quiere decir \""+command+"\" bro";
+	return response;
 }
