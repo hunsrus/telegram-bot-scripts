@@ -1,3 +1,10 @@
 TOKEN=*telegram bot token here*
 BOT_NAME=Leo Mattioli
 LANGUAGE=es_AR
+SCRIPTS_PATH=../scripts/
+
+COMMAND={
+KEYWORDS=turn kitchen lights on
+SCRIPT=serial-commander
+PARAMETERS=led_on
+}
