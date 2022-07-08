@@ -1,3 +1,2 @@
 #!/bin/sh
-make --always-make -f Makefile
-./prueba
+make --always-make -f Makefile && ./prueba
