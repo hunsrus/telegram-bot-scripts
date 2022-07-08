@@ -26,9 +26,9 @@ set(link_libs
   PRIVATE OpenSSL::SSL
 )
 
-macro(add_tg_example echo)
-  add_executable(prueba main.cpp)
+macro(add_tg bts)
+  add_executable(prueba main.cpp bothandler.cpp)
   target_link_libraries(prueba ${link_libs})
-endmacro(add_tg_example echo)
+endmacro(add_tg bts)
 
-add_tg_example(echo)
+add_tg(bts)
