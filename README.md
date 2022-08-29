@@ -1,3 +1,5 @@
+<img align="left" src="https://github.com/hunsrus/telegram-bot-scripts/blob/main/telegram-bot.png" width="120px">
+
 # telegram-bot-scripts
 Simple telegram bot utility that listens for commands an runs scripts
 # Dependencies
