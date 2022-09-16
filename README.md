@@ -6,7 +6,7 @@ Simple telegram bot utility that listens for commands and runs scripts
 ```
 apt install libssl-dev libboost-all-dev ffmpeg
 ```
-Also [spchcat](https://github.com/petewarden/spchcat) is needed for speech recognition. You can install it following the [install notes](https://github.com/petewarden/spchcat/blob/main/notebooks/install.ipynb). To use the speech recognition capabilities read the corresponding section.
+Also [spchcat](https://github.com/petewarden/spchcat) is needed for speech recognition. You can install it following the [install notes](https://github.com/petewarden/spchcat/blob/main/notebooks/install.ipynb). To use the speech recognition capabilities read the corresponding [section](https://github.com/hunsrus/telegram-bot-scripts#speech-recognition).
 # Configuration file
 To set the available parameters, you should copy te ```config-sample``` file and rename it as ```config```. There you can customize the fields and add the information regarding your own Telegram Bot.
 # Speech recognition
