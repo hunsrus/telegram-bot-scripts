@@ -39,12 +39,51 @@ int BotHandler::transcribe(std::string file_name)
 
 std::string BotHandler::checknrun(std::string command)
 {
+	std::string param_value, value, bands, param_mod;
+	int param_pos, param_end;
+	param_pos = command.find("resistencia de ");
+	if(param_pos != std::string::npos)
+	{
+		param_pos += 15;
+		param_end = command.find_first_of(" ",param_pos);
+		if(param_end != std::string::npos)
+			param_value = command.substr(param_pos,param_end-param_pos);
+		value = param_value;
+		command.replace(param_pos,param_end-param_pos,"$value");
+	}
+	param_pos = command.find("$value de ");
+	if(param_pos != std::string::npos)
+	{
+		param_pos += 10;
+		param_end = command.length();
+		if(param_end != std::string::npos)
+			param_value = command.substr(param_pos,param_end-param_pos);
+		bands = param_value;
+		command.replace(param_pos,param_end-param_pos,"$bands");
+	}
+	
 	std::string response = "No entiendo que quiere decir \""+command+"\" bro";
 	if(command.empty()) response = "Error de transcripción. Intentá nuevamente con un audio más largo.";
 	else for (std::list<cmd>::iterator it = this->available_commands.begin(); it != this->available_commands.end(); it++)
 	{
 		if (command == it->key)
-			response = exec(std::string(this->scripts_path+it->script+" "+it->param).c_str());
+		{
+			param_mod = it->param;
+			param_pos = param_mod.find_first_of("$");
+			if(param_pos != std::string::npos)
+			{
+				param_end = param_mod.find_first_of(" ",param_pos);
+				param_mod.replace(param_pos,param_end-param_pos,value);
+				
+				param_pos = param_mod.find_first_of("$",param_end);
+				if(param_pos != std::string::npos)
+				{
+					param_end = param_mod.length();
+					param_mod.replace(param_pos,param_end-param_pos,bands);
+				}
+			}
+			response = exec(std::string(this->scripts_path+it->script+" "+param_mod).c_str());
+		}
 	}
 	return response;
 }

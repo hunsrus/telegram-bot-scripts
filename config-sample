@@ -8,3 +8,9 @@ KEYWORDS=turn kitchen lights on
 SCRIPT=serial-commander
 PARAMETERS=led_on
 }
+
+COMMAND={
+KEYWORDS=resistencia de $value de $bands
+SCRIPT=colores-resistencias
+PARAMETERS= -v $value -b $bands
+}

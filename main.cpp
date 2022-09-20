@@ -4,7 +4,7 @@
 int main(void)
 {
 	BotHandler bh;
-	std::string response, command;
+	std::string response, command, param_value;
 	bh.configFileParser("../config");
 	
   	telegram::sender sender(bh.getToken());                                       // create a sender with our token for outgoing messages
@@ -43,6 +43,12 @@ int main(void)
 				system(std::string("rm "+file_name+" "+file_wav+" transcript").c_str());
 			}else sender.send_message(message_chat_id, "Error downloading voice message");
 		}
+		
+		//converts entire command to lowercase
+		std::for_each(command.begin(), command.end(), [](char & c){
+    		c = ::tolower(c);
+		});
+
 		response = bh.checknrun(command);
 		sender.send_message(message.chat.id, response);
   	});
